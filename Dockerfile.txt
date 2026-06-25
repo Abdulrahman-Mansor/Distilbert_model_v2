@@ -1,0 +1,27 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Prevent Hugging Face from printing verbose warnings about missing PyTorch/TensorFlow
+ENV TRANSFORMERS_NO_ADVISORY_WARNINGS=1
+
+# Install basic system layer tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Cache Python dependencies 
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# FIX: Explicitly copy the local model directory into the container image
+COPY ./model ./model
+
+# Copy over runtime code
+COPY app.py .
+
+# API Port configuration
+EXPOSE 8000
+
+# Start production server
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
